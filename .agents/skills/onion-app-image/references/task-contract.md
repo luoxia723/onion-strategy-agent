@@ -4,7 +4,7 @@
 {
   "schema_version": "onion_app_image_task_v1",
   "task_id": "与request_id相同",
-  "copy_source": "APP图片文案_第1版.md",
+  "copy_source": "AIC-20260828-140000-a1b2_APP图片投放文案_v001.md",
   "approved_copy_ids": ["文案 1"],
   "config_status": "saved",
   "placements": [{"channel": "信息流", "placement": "...", "form": "单图"}],

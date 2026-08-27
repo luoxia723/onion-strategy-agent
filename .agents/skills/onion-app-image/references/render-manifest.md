@@ -16,7 +16,7 @@
       "references": [
         {"label": "参考图1", "role": "品牌Logo", "asset_id": "...", "path": "assets/...png"}
       ],
-      "output": ".runtime/.../候选图片/copy-001-placement-001-set-01-01.png",
+      "output": "<任务版本目录>/03_候选/候选图片/copy-001-placement-001-set-01-01.png",
       "depends_on": []
     }
   ]
@@ -28,5 +28,5 @@
 - `resolution`固定为`2K`；`size`或`aspect_ratio`来自已保存版位配置；
 - 参考图顺序固定为Logo、IP、风格/构图、字体、真实UI，缺少某类时顺延；
 - Logo存在时必须是`参考图1`并满足保真Prompt；
-- `output`必须位于本任务`.runtime`目录；重跑不覆盖不匹配的KIE任务指纹；
+- `output`必须位于统一任务版本的`03_候选`；短时下载和可重建缓存才进入`.runtime/<任务ID>`；重跑不覆盖不匹配的KIE任务指纹；
 - 清单不能保存API Key、上传临时地址或KIE结果临时URL。

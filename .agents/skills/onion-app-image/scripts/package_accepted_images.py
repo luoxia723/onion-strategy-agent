@@ -3,14 +3,15 @@
 Package accepted image schemes from image-selection-result.json into one zip.
 
 The zip is a local delivery artifact for operators. It contains only accepted
-scheme images, with compressed JPGs by default. A manifest JSON is written next
-to the zip for traceability, not inside the operator-facing zip.
+scheme images, with compressed JPGs by default, plus a portable delivery
+manifest. A richer local audit manifest is written next to the zip.
 """
 
 from __future__ import annotations
 
 import argparse
 from collections import defaultdict
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -54,6 +55,14 @@ def load_json(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError("selection result must be a JSON object")
     return data
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def load_optional_json(path: Path | None) -> dict[str, Any]:
@@ -490,6 +499,7 @@ def package_accepted_images(
 
     try:
         with zipfile.ZipFile(temp_output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            delivery_files: list[dict[str, Any]] = []
             for packet in packets:
                 scheme = packet["scheme"]
                 set_id = packet["set_id"]
@@ -526,6 +536,12 @@ def package_accepted_images(
                     file_name = f"{archive_dir}-{counters[archive_dir]}{suffix}"
                     arcname = f"{archive_dir}/{file_name}"
                     archive.write(packaged, arcname)
+                    delivery_file = {
+                        "path": arcname,
+                        "byte_count": packaged.stat().st_size,
+                        "sha256": file_sha256(packaged),
+                    }
+                    delivery_files.append(delivery_file)
                     scheme_entry["files"].append(
                         {
                             "index": image_index,
@@ -533,9 +549,24 @@ def package_accepted_images(
                             "source": str(source),
                             "packaged": str(packaged),
                             "zip_path": arcname,
+                            "byte_count": delivery_file["byte_count"],
+                            "sha256": delivery_file["sha256"],
                         }
                     )
                 package_manifest["schemes"].append(scheme_entry)
+
+            portable_manifest = {
+                "schema_version": "onion_delivery_package_v1",
+                "request_id": request_id,
+                "delivery_name": delivery_name_raw,
+                "accepted_count": len(accepted),
+                "files": delivery_files,
+            }
+            archive.writestr(
+                "交付清单.json",
+                json.dumps(portable_manifest, ensure_ascii=False, indent=2) + "\n",
+            )
+            package_manifest["portable_manifest"] = portable_manifest
 
         temp_manifest.write_text(json.dumps(package_manifest, ensure_ascii=False, indent=2), encoding="utf-8")
         temp_output.replace(output)

@@ -22,19 +22,17 @@
 ## 输出
 
 ```text
-.runtime/策略Agent产物/<北京时间日期>/APP图片/<任务ID>/
-├── 图片文案.md
-├── image-config-result.json
-├── image-render-manifest.json
-├── image-render-result.json
-├── 候选图片/
-├── image-selection.html
-├── image-selection-result.json
-├── 图片质检.json
-└── 交付图片/
+工作区/产物/<北京时间日期>/APP图片/<任务ID>/vNNN/
+├── 00_任务/任务清单.json
+├── 01_输入/<任务ID>_APP图片投放文案_vNNN.md
+├── 02_过程/image-config-result.json、image-render-manifest.json、image-render-result.json
+├── 03_候选/候选图片、image-selection.html、image-selection-result.json
+├── 04_交付/<任务ID>_APP图片_方案NNN_图NN_vNNN.jpg
+├── 05_质检/<任务ID>_图片质检_vNNN.json
+└── 06_打包/<任务ID>_APP图片交付包_vNNN.zip（按需）
 ```
 
-任务重跑使用新版本，不覆盖已有候选和采纳图片。默认不生成 ZIP、不发布、不投放。
+任务目录和文件名必须符合统一产物合同。任务重跑使用新版本，不覆盖已有候选和采纳图片。默认不生成 ZIP、不发布、不投放。
 
 ## 停止条件
 
