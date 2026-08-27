@@ -5,9 +5,9 @@ interface:
 dependencies:
   tools:
     - type: "mcp"
-      value: "onion-intelligence"
-      description: "读取内部周期、效果原记录、富化证据和高表现素材关联"
+      value: "onion-agent"
+      description: "通过统一OAuth冻结内部完整素材池与表现事实"
       transport: "streamable_http"
-      url: "https://intel-mcp.guanghexinzhi.cn/mcp"
+      url: "https://intel-mcp.guanghexinzhi.cn/agent/mcp"
 policy:
   allow_implicit_invocation: true

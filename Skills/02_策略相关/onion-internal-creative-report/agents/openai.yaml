@@ -5,9 +5,9 @@ interface:
 dependencies:
   tools:
     - type: "mcp"
-      value: "onion-intelligence"
-      description: "读取内部周期、完整素材表现、富化对象和高表现关联"
+      value: "onion-agent"
+      description: "通过统一OAuth复用内部完整素材池并回查创意事实"
       transport: "streamable_http"
-      url: "https://intel-mcp.guanghexinzhi.cn/mcp"
+      url: "https://intel-mcp.guanghexinzhi.cn/agent/mcp"
 policy:
   allow_implicit_invocation: true
