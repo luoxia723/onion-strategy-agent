@@ -1,0 +1,13 @@
+interface:
+  display_name: "外部需求报告"
+  short_description: "读取当前外部情报并生成可回源、可供下游消费的需求报告"
+  default_prompt: "使用 $onion-demand-report 按指定目标时间节点生成当前外部需求报告。"
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "onion-intelligence"
+      description: "读取当前外部采集批次、需求证据、分析证据和素材详情"
+      transport: "streamable_http"
+      url: "https://intel-mcp.guanghexinzhi.cn/mcp"
+policy:
+  allow_implicit_invocation: true

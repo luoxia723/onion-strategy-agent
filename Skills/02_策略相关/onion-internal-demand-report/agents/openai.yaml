@@ -1,0 +1,13 @@
+interface:
+  display_name: "内部需求报告"
+  short_description: "读取内部完整周期素材、富化和表现事实并生成内部需求报告"
+  default_prompt: "使用 $onion-internal-demand-report 生成最近完整共同14天的内部需求报告。"
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "onion-intelligence"
+      description: "读取内部周期、效果原记录、富化证据和高表现素材关联"
+      transport: "streamable_http"
+      url: "https://intel-mcp.guanghexinzhi.cn/mcp"
+policy:
+  allow_implicit_invocation: true

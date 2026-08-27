@@ -1,0 +1,13 @@
+interface:
+  display_name: "内部视频创意报告"
+  short_description: "读取内部完整视频、富化和表现背景并归并可复用创意结构"
+  default_prompt: "使用 $onion-internal-creative-report 生成最近完整周期的内部视频创意报告。"
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "onion-intelligence"
+      description: "读取内部周期、完整素材表现、富化对象和高表现关联"
+      transport: "streamable_http"
+      url: "https://intel-mcp.guanghexinzhi.cn/mcp"
+policy:
+  allow_implicit_invocation: true

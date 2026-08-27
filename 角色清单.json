@@ -1,0 +1,22 @@
+{
+  "schema_version": "onion_role_workspace_v1",
+  "role": "strategy",
+  "display_name": "洋葱策略 Agent",
+  "repository": "onion-strategy-agent",
+  "skills": [
+    "Skills/02_策略相关/onion-demand-report",
+    "Skills/02_策略相关/onion-internal-demand-report",
+    "Skills/02_策略相关/onion-creative-report",
+    "Skills/02_策略相关/onion-internal-creative-report",
+    "Skills/02_策略相关/onion-purchase-motive",
+    "Skills/02_策略相关/onion-function-direction"
+  ],
+  "resolved_skill_names": [
+    "onion-creative-report",
+    "onion-demand-report",
+    "onion-function-direction",
+    "onion-internal-creative-report",
+    "onion-internal-demand-report",
+    "onion-purchase-motive"
+  ]
+}

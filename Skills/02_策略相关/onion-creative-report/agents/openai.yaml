@@ -1,0 +1,13 @@
+interface:
+  display_name: "外部视频创意报告"
+  short_description: "读取外部完整视频案例并归并可供下游复用的创意结构"
+  default_prompt: "使用 $onion-creative-report 生成当前外部视频创意报告。"
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "onion-intelligence"
+      description: "读取外部创意范围、创意证据、完整素材详情与转写媒体"
+      transport: "streamable_http"
+      url: "https://intel-mcp.guanghexinzhi.cn/mcp"
+policy:
+  allow_implicit_invocation: true
