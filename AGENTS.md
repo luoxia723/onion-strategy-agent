@@ -2,26 +2,39 @@
 
 ## 项目身份
 
-本仓库是由投放AI内容自动化主仓库自动生成的 `strategy` 角色工作区。发行版本 `0.1.4`，来源提交 `d566d7ab8b8688ade67d7ea1aae7e183fd2a0f1b`。本仓库不是Skill源码owner；`AGENTS.md`、`README.md`、`首次使用.md`、`.agents/`、`产品资料/`、`.codex/`、`scripts/`和发行清单只能通过上游自动更新，不在本仓库手工修改。
+本仓库是由投放AI内容自动化主仓库自动生成的 `strategy` 角色工作区。发行版本 `0.1.5`，来源提交 `a3983178c5623633d159d4867ab2f1979e82b744`。本仓库不是Skill源码owner；`AGENTS.md`、`README.md`、`首次使用.md`、`.agents/`、`产品资料/`、`.codex/`、`scripts/`和发行清单只能通过上游自动更新，不在本仓库手工修改。
 
 ## 角色职责
 
-负责全链路策略与下游生成：外部/内部需求、外部/内部创意、购买动因与信息屋、功能方向，以及APP/线索口播、APP图片文案与图片、纯配音混剪和口播主轴混剪。可把已确认的策略产物直接交给同仓库下游Skill；仍不包含采集、入库、部署或暂缓的AI前贴。
+负责全链路策略与下游生成：外部/内部需求、外部/内部创意、购买动因与信息屋、功能方向，以及APP/线索口播、APP图片文案与图片、纯配音混剪和口播主轴混剪。可把已确认的策略产物直接交给同仓库下游Skill；仍不包含采集、入库、部署或暂缓的AI前贴。 下表就是本角色完整 Skill 集合，不另列一份重复清单。
 
-本角色包含：
+## Skill 路由与上下文
 
-- `onion-demand-report`
-- `onion-internal-demand-report`
-- `onion-creative-report`
-- `onion-internal-creative-report`
-- `onion-purchase-motive`
-- `onion-function-direction`
-- `onion-app-video-copy`
-- `onion-lead-video-copy`
-- `onion-app-image-copy`
-- `onion-app-image`
-- `onion-voiceover-video-mix`
-- `onion-talking-head-video-mix`
+1. 每次按用户当前要的正式产物选择一个最小Skill，只读取该SKILL.md和当前分支需要的直接引用。
+2. 不因角色拥有多个Skill而预加载全部Skill，也不默认自动跑完整链路。
+3. 用户已经提供并确认上游产物时直接作为交接输入，不重新生成上游。
+4. 一个Skill到达人工审核或停止点后先交付；只有当前请求明确包含下一产物且授权成立时才加载下一个Skill。
+5. 跨Skill只传已确认产物、稳定身份、版本、哈希和必要来源，不把上一Skill的完整长上下文继续带入。
+6. 统一MCP只执行当前已选Skill的确定请求，不负责选择Skill、重做策略或绕过人工门禁。
+
+| Skill | 何时选择 | 必要交接 | 停止点 |
+|---|---|---|---|
+| `onion-demand-report` | 用户当前要外部需求报告 | 目标时间节点 | 单文件外部需求报告 |
+| `onion-internal-demand-report` | 用户当前要内部需求报告 | 默认最近完整共同14天或明确历史周期 | 单文件内部需求报告 |
+| `onion-creative-report` | 用户当前要外部视频创意报告 | 外部完整视频案例范围 | 外部创意结构报告 |
+| `onion-internal-creative-report` | 用户当前要内部视频创意报告 | 内部共同周期完整视频池 | 内部创意结构报告 |
+| `onion-purchase-motive` | 用户当前要购买动因或信息屋 | 两份需求报告、产品事实和策略时间范围 | 购买动因人工采用 |
+| `onion-function-direction` | 用户当前要指定功能的投放方向卡 | 两份需求报告、指定功能、功能事实和时间节点 | 固定9列方向卡 |
+| `onion-app-video-copy` | 用户当前要APP下载口播文案 | 一个已选APP购买动因和信息屋；创意报告可选 | 文案人工采用 |
+| `onion-lead-video-copy` | 用户当前要线索留资口播文案 | 一个已选线索购买动因和信息屋；创意报告可选 | 文案人工采用 |
+| `onion-app-image-copy` | 用户当前要APP静态图片文案 | 已确认产品功能方向卡 | 图片文案人工采用 |
+| `onion-app-image` | 用户当前要生成APP正式图片 | 已确认图片文案和制作配置 | 采纳图片 |
+| `onion-voiceover-video-mix` | 用户要新旁白作为正文音频主轴的无字幕混剪 | 已确认正文；零或一条已有前贴 | 无字幕MP4和QA |
+| `onion-talking-head-video-mix` | 用户要保留真人或数字人母片原声作为正文主轴 | 目标业务线、口播母片；零或一条已有前贴 | 字幕、MP4和QA |
+
+两类视频混剪只选择一个：新旁白作为正文音频主轴时使用`onion-voiceover-video-mix`；保留真人或数字人母片原声、口型和人物主轴时使用`onion-talking-head-video-mix`。普通配画仍来自正式素材库hybrid检索。用户上传只正式支持一条完整前贴，以及口播主轴路线的一条真人/数字人母片。
+
+`onion-ai-preroll`当前暂缓且尚未进入本角色发行。用户已有前贴时，正文未写就交给对应口播文案Skill分析承接，正文已确认就直接作为混剪可选输入；不得假装调用未发行Skill。
 
 ## 工具权限
 
@@ -46,4 +59,4 @@
 
 ## 运行
 
-执行某个Skill前必须完整读取`.agents/skills/<skill-name>/SKILL.md`及其直接引用。付费、上传、写入和媒体生成继续执行Skill规定的当前任务确认门禁。所有正式产物写入`工作区/产物/`，不得写回`.agents/`。
+按“Skill 路由与上下文”执行。付费、上传、写入和媒体生成继续遵守所选Skill的当前任务确认门禁；所有正式产物写入`工作区/产物/`，不得写回`.agents/`。
