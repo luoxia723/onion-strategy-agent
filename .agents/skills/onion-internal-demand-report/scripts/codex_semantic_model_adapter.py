@@ -10,6 +10,13 @@ from pathlib import Path
 from typing import Any
 
 
+COMMON_SCRIPTS = Path(__file__).resolve().parents[3] / "scripts"
+if str(COMMON_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(COMMON_SCRIPTS))
+
+from codex_runtime import resolve_codex_binary  # noqa: E402
+
+
 SUBJECT = {"type": "string", "enum": ["student", "parent", "other"]}
 BUSINESS = {"type": "string", "enum": ["app", "lead"]}
 STRING = {"type": "string", "minLength": 1}
@@ -139,7 +146,7 @@ def main() -> int:
             encoding="utf-8",
         )
         command = [
-            "codex",
+            str(resolve_codex_binary()),
             "exec",
             "--ephemeral",
             "--ignore-user-config",

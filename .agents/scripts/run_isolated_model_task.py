@@ -8,8 +8,15 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
+
+COMMON_SCRIPTS = Path(__file__).resolve().parent
+if str(COMMON_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(COMMON_SCRIPTS))
+
+from codex_runtime import resolve_codex_binary
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -113,7 +120,7 @@ def main() -> int:
     stderr_path = args.output.with_suffix(args.output.suffix + ".stderr.txt")
     receipt_path = args.output.with_suffix(args.output.suffix + ".receipt.json")
     command = [
-        "codex",
+        str(resolve_codex_binary()),
         "exec",
         "--ephemeral",
         "--ignore-user-config",
