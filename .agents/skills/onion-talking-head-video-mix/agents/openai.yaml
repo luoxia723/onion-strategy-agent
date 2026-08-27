@@ -1,0 +1,13 @@
+interface:
+  display_name: "口播主轴混剪"
+  short_description: "统一制作APP或线索真人/数字人口播主轴混剪视频"
+  default_prompt: "使用 $onion-talking-head-video-mix 校验业务线与CTA，并为口播母片完成混剪。"
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "onion-agent"
+      description: "统一回查口播母片、搜索配画、上传任务媒体并渲染字幕成片"
+      transport: "streamable_http"
+      url: "https://intel-mcp.guanghexinzhi.cn/agent/mcp"
+policy:
+  allow_implicit_invocation: true

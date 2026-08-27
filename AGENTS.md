@@ -2,11 +2,11 @@
 
 ## 项目身份
 
-本仓库是由投放AI内容自动化主仓库自动生成的 `strategy` 角色工作区。发行版本 `0.1.1`，来源提交 `10c9613d34d9e398f2c6a3ab17a4d353ca93f738`。本仓库不是Skill源码owner；`AGENTS.md`、`.agents/`、`产品资料/`、`.codex/`、`scripts/`和发行清单只能通过上游自动更新，不在本仓库手工修改。
+本仓库是由投放AI内容自动化主仓库自动生成的 `strategy` 角色工作区。发行版本 `0.1.2`，来源提交 `1bdae5f9c70d69deecd04457ab2490f0fea56390`。本仓库不是Skill源码owner；`AGENTS.md`、`.agents/`、`产品资料/`、`.codex/`、`scripts/`和发行清单只能通过上游自动更新，不在本仓库手工修改。
 
 ## 角色职责
 
-负责生成和维护外部需求、内部需求、外部创意、内部创意、购买动因与信息屋、产品功能投放方向。不生成正式口播、图片或视频；向APP和线索角色交付已确认策略产物。
+负责全链路策略与下游生成：外部/内部需求、外部/内部创意、购买动因与信息屋、功能方向，以及APP/线索口播、APP图片文案与图片、纯配音混剪和口播主轴混剪。可把已确认的策略产物直接交给同仓库下游Skill；仍不包含采集、入库、部署或暂缓的AI前贴。
 
 本角色包含：
 
@@ -16,6 +16,12 @@
 - `onion-internal-creative-report`
 - `onion-purchase-motive`
 - `onion-function-direction`
+- `onion-app-video-copy`
+- `onion-lead-video-copy`
+- `onion-app-image-copy`
+- `onion-app-image`
+- `onion-voiceover-video-mix`
+- `onion-talking-head-video-mix`
 
 ## 工具权限
 

@@ -9,14 +9,26 @@
     "Skills/02_策略相关/onion-creative-report",
     "Skills/02_策略相关/onion-internal-creative-report",
     "Skills/02_策略相关/onion-purchase-motive",
-    "Skills/02_策略相关/onion-function-direction"
+    "Skills/02_策略相关/onion-function-direction",
+    "Skills/03_内容生成相关/onion-app-video-copy",
+    "Skills/03_内容生成相关/onion-lead-video-copy",
+    "Skills/03_内容生成相关/onion-app-image-copy",
+    "Skills/03_内容生成相关/onion-app-image",
+    "Skills/03_内容生成相关/onion-voiceover-video-mix",
+    "Skills/03_内容生成相关/onion-talking-head-video-mix"
   ],
   "resolved_skill_names": [
+    "onion-app-image",
+    "onion-app-image-copy",
+    "onion-app-video-copy",
     "onion-creative-report",
     "onion-demand-report",
     "onion-function-direction",
     "onion-internal-creative-report",
     "onion-internal-demand-report",
-    "onion-purchase-motive"
+    "onion-lead-video-copy",
+    "onion-purchase-motive",
+    "onion-talking-head-video-mix",
+    "onion-voiceover-video-mix"
   ]
 }
