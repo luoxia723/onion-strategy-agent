@@ -29,7 +29,7 @@ description: 生成或修改正式外部视频创意报告，基于冻结范围�
 ## 固定流程
 
 1. 确定内部锚点周期、外部观察范围、平台、来源、视频边界、生成时间和冻结时刻，生成版本内报告 ID。
-2. 调用一次`intelligence_freeze_report_input(mode=external-creative)`由服务器完成全部创意证据分页；下载返回的快照ZIP、校验SHA-256并用`Skills/scripts/extract_report_input_snapshot.py`展开到`.runtime`。外层对话只接收 manifest；从冻结快照核对稳定案例总数、来源构成、分页和缺失。
+2. 调用一次`intelligence_freeze_report_input(mode=external-creative)`由服务器完成全部创意证据分页；下载返回的快照ZIP、校验SHA-256并用`.agents/scripts/extract_report_input_snapshot.py`展开到`.runtime`。外层对话只接收 manifest；从冻结快照核对稳定案例总数、来源构成、分页和缺失。
 3. 冻结证据已能完整支持六维判断时直接形成案例输入；字段不足的候选、中心/边界案例和最终代表案例，再在一个程序化阶段批量取得开头、推进、转折、产品或证据怎样承接、结尾怎样行动及可定位画面或转写证据。详情返回写入私有运行快照，不逐案例进入外层上下文，也不默认回查全部228个案例。
 4. 按共同六维语义提取结构观察；关键词、向量或模型只发现候选。每个隔离批次只输出`material_context_id`绑定的六维观察，所有完整案例必须且只能得到一个已处理去向，不能在批次输出中直接写报告。
 5. 跨批归并只读取六维观察、中心案例、边界案例和必要来源元数据，不再次插入完整MCP证据。使用硬合并/拆分规则复核中心案例和边界案例；表面形式相似不能决定归并。

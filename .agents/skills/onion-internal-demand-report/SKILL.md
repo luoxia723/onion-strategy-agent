@@ -33,7 +33,7 @@ description: 生成或修改一份单文件洋葱内部需求报告，自动使�
 ## 固定流程
 
 1. 确定共同14天：APP 必须有两张连续、不重叠的周表，线索必须有同起止日期双周表。
-2. 调用一次`intelligence_freeze_report_input(mode=internal-complete)`取得 APP 与线索完整素材池；服务器完成全部分页、版本与守恒。下载快照ZIP、校验SHA-256并用`Skills/scripts/extract_report_input_snapshot.py`展开到`.runtime`，然后核对 APP、线索、渠道、快照和稳定素材总数，记录《产品事实与卖点》的命名源版本。该快照同时供内部创意报告使用；外层对话只接收 manifest。
+2. 调用一次`intelligence_freeze_report_input(mode=internal-complete)`取得 APP 与线索完整素材池；服务器完成全部分页、版本与守恒。下载快照ZIP、校验SHA-256并用`.agents/scripts/extract_report_input_snapshot.py`展开到`.runtime`，然后核对 APP、线索、渠道、快照和稳定素材总数，记录《产品事实与卖点》的命名源版本。该快照同时供内部创意报告使用；外层对话只接收 manifest。
 3. 建立基础素材池：共同14天表内全部正式素材按稳定素材身份去重，消耗为0也保留。
 4. 建立可分析素材池：以已下载内容形成的稳定素材身份作为实际媒体类型；纳入实际为 video 且有当前成功 AI-02 的视频，以及来自小红书、实际为 gallery 且有当前成功 AI-02 的图组。
 5. 原表媒体类型只作来源元数据；它与实际素材类型冲突或写成 unknown 时保留质量标记，不单独取消一个真实可用素材的分析资格。无稳定素材身份、未富化、非小红书图片和证据结构缺失不参与归并，只在数据说明中计数。
