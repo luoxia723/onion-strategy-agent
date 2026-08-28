@@ -40,7 +40,7 @@ description: 当用户已经确认 APP 图片文案并要求生成信息流、�
 
 1. 确认输入是已批准的固定格式APP图片文案；把每套的渠道、图片形式、主标题/副标题或短句整理为配置卡上下文。
 2. 建立“产品事实→目标人群→具体场景→产品动作→可感知变化”的最小视觉链。
-3. 启动`scripts/interactive_server.py`并打开返回的本地配置卡。即使聊天中已经说过参数，也必须由用户保存配置结果。
+3. 启动`scripts/interactive_server.py`，显式把统一任务版本的`02_过程`作为`--output-dir`，并打开返回的本地配置卡。即使聊天中已经说过参数，也必须由用户保存配置结果。
 4. 需要可识别APP/UI时等待用户上传真实截图；缺失时停止或改为不可识别的抽象屏幕。
 5. 根据配置结果与[Prompt规则](references/prompt-rules.md)生成`image-render-manifest.json`；逐张写清文案、场景、产品动作、构图、参考资产、安全区和禁止项。
 6. 运行`scripts/validate_task.py`和每个任务的`scripts/render.py --validate-only`，只验证清单、Prompt、比例、引用顺序和输出路径，不调用付费接口。

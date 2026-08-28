@@ -70,9 +70,15 @@ def resolve_output_dir(value: str | None, request_id: str) -> Path:
         if value
         else request_output_dir(request_id).resolve()
     )
-    root = runtime_output_root().resolve()
-    if output != root and root not in output.parents:
-        raise ValueError(f"output directory must stay under {root}")
+    repository = repository_root()
+    allowed_roots = (
+        runtime_output_root().resolve(),
+        (repository / "工作区" / "产物").resolve(),
+    )
+    if not any(output == root or root in output.parents for root in allowed_roots):
+        raise ValueError(
+            "output directory must stay under .runtime/策略Agent产物 or 工作区/产物"
+        )
     return output
 
 
@@ -1324,7 +1330,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--request-id", required=True)
     parser.add_argument(
         "--output-dir",
-        help="Defaults to .runtime/策略Agent产物/<北京时间日期>/APP图片/<request_id>.",
+        help="Formal roles pass the task version 02_过程 directory; omitted uses the maintenance .runtime path.",
     )
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--context", help="JSON string or JSON file path with upstream copy/direction context")
