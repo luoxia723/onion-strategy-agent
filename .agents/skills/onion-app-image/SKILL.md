@@ -44,7 +44,7 @@ description: 当用户已经确认 APP 图片文案并要求生成信息流、�
 4. 需要可识别APP/UI时等待用户上传真实截图；缺失时停止或改为不可识别的抽象屏幕。
 5. 根据配置结果与[Prompt规则](references/prompt-rules.md)生成`image-render-manifest.json`；逐张写清文案、场景、产品动作、构图、参考资产、安全区和禁止项。
 6. 运行`scripts/validate_task.py`和每个任务的`scripts/render.py --validate-only`，只验证清单、Prompt、比例、引用顺序和输出路径，不调用付费接口。
-7. 告知预计图组数和图片数；只有取得当前任务付费确认后，才按`image-render-manifest.json`的job顺序调用`generation_kie_image`。将Prompt、版位比例和最多8张已确认参考图（base64、MIME、文件名，总计不超过64MB）传给工具，传`approved_in_current_task=true`，幂等Key固定绑定`task_id＋job_id＋清单指纹`。网络重试复用原Key；失败后不自动换Key重新创建付费任务。
+7. 告知预计图组数和图片数；只有取得当前任务付费确认后才进入生成。先按SHA-256去重本任务的Logo、IP、风格、字体和UI参考图；每个唯一资产只调一次`generation_upload_media`，传明确的`file_name`、`mime_type`和不带`data:`前缀的`base64_data`，并保留返回的`output_id`。再按`image-render-manifest.json`的job顺序调`generation_kie_image`，传Prompt、版位比例和已上传参考图的`reference_output_ids`；无参考图时省略该字段走文生图。上传Key绑定`task_id＋资产SHA-256`，每张候选的生图Key分别绑定`task_id＋job_id＋清单指纹`，两个job禁止共用一个Key。两类调用都传`approved_in_current_task=true`；网络重试复用各自原Key，失败后不自动换Key重建付费任务。
 8. 将工具返回的候选图立即下载到清单的`output`路径，校验`sha256`和MIME，并在`image-render-result.json`保留`job_id`、`output_id`、哈希、供应商taskId和人工状态；不保存短时URL作为长期引用。版位要求精确尺寸或体积时，将KIE `output_id`、目标宽高和KB上限传给`generation_prepare_image_delivery`，下载并校验返回JPEG；下游不需要安装Pillow。然后运行`scripts/build_selection_page.py`生成本地选择页。
 9. 用户逐套选择；只有采纳图片进入统一任务版本的`04_交付`。用户明确要求打包时才运行`scripts/package_accepted_images.py`，并把ZIP和内外两份交付清单写入`06_打包`。
 10. 任务根目录、版本、文件名和包名由`scripts/artifact_workspace.py`创建与校验；`.runtime/<任务ID>/`只保存可重建过程文件，不上传广告平台、不发布。
