@@ -293,7 +293,7 @@
       <h2>投放场景</h2>
       <div id="category-tabs" class="tabs"></div>
       <h2>具体版位</h2>
-      <div class="hint">可多选。用户只选版位，不选尺寸；卡片内展示目标尺寸、gpt 出图尺寸、压缩上限和一期支持状态。</div>
+      <div class="hint">单选。一次任务只选择一个具体版位；用户不选尺寸，卡片内展示目标尺寸、gpt 出图尺寸、压缩上限和一期支持状态。</div>
       <div id="placement-warning" class="placement-warning"></div>
       <div id="slot-grid" class="slot-grid"></div>
     </section>
@@ -307,7 +307,7 @@
       <div class="field">
         <label for="sets">图片套数</label>
         <input id="sets" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-        <div class="hint">每条文案在每个版位生成几套。手动输入，最多 50 套；整批最多 100 图组，超过请拆批。</div>
+        <div class="hint">每条文案在当前所选版位生成几套候选。手动输入，最多 50 套；整批最多 100 图组，超过请拆批。</div>
       </div>
       <div class="field">
         <label>命名预览</label>
@@ -573,6 +573,7 @@
     }
 
     function selectCategory(category) {
+      if (state.category !== category) state.selectedSlotIds = [];
       state.category = category;
       renderAll();
     }
@@ -580,11 +581,7 @@
     function toggleSlot(id) {
       const slot = DATA.slots.find(item => item.id === id);
       if (!slot || slot.enabled === false) return;
-      if (state.selectedSlotIds.includes(id)) {
-        state.selectedSlotIds = state.selectedSlotIds.filter(item => item !== id);
-      } else {
-        state.selectedSlotIds.push(id);
-      }
+      state.selectedSlotIds = [id];
       renderAll();
     }
     function selectLogo(index) { state.logoIndex = index; renderAll(); }
@@ -593,7 +590,7 @@
     function collectResult() {
       syncState();
       const slots = selectedSlots();
-      if (!slots.length) throw new Error("请先选择至少一个版位");
+      if (slots.length !== 1) throw new Error("请选择且仅选择一个版位");
       const deliveryName = document.getElementById("deliveryName").value.trim();
       if (!deliveryName) throw new Error("请填写方向名");
       const setCount = parseSets(document.getElementById("sets").value);

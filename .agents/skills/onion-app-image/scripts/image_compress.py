@@ -11,16 +11,16 @@ image_compress.py - Pillow 压缩图片到目标 KB。
 # 策略
 
   1. 若传 target_width/target_height，先按 cover 居中裁切到目标尺寸
-  2. 再转 JPG（去 alpha），初始 quality=85
-  3. 若 > target_kb，逐步降 quality 步长 5，直到达标 / quality 降到 60
-  4. 若 quality=60 还超 → 等比缩小 0.9 倍再试
-  5. 最多 10 轮
+  2. 再转 JPG（去 alpha），从 quality=85 起逐步降低直到达标
+  3. 有精确目标宽高时始终保持该像素尺寸，不能为减小体积继续缩图
+  4. 未指定精确宽高时才允许按 0.9 逐级缩小，最多 10 轮
+  5. 无法同时满足尺寸和体积时明确失败，不留下假成功文件
 
 # 退出码
 
   0: 成功
   1: 输入文件不存在 / 不可读
-  2: 压缩失败（最终仍超 target_kb 2x 以上）
+  2: 压缩失败（无法满足目标尺寸/体积）
 """
 
 import argparse
@@ -56,38 +56,44 @@ def compress(
     """压缩到目标 KB。返回最终输出路径。"""
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"Input not found: {input_path}")
+    if target_kb <= 0:
+        raise ValueError("target_kb must be positive")
+    if bool(target_width) != bool(target_height):
+        raise ValueError("target_width and target_height must be provided together")
 
     img = Image.open(input_path).convert("RGB")  # PNG → RGB（去 alpha）
     if target_width and target_height:
         img = resize_cover(img, target_width, target_height)
-    quality = 85
-    scale = 1.0
 
-    for round_no in range(1, 11):
-        # 缩放
-        if scale < 1.0:
-            new_size = (int(img.width * scale), int(img.height * scale))
-            scaled = img.resize(new_size, Image.LANCZOS)
-        else:
-            scaled = img
+    output = os.path.abspath(output_path)
+    os.makedirs(os.path.dirname(output), exist_ok=True)
+    temp_output = output + ".tmp.jpg"
+    scales = [1.0] if target_width and target_height else [0.9**index for index in range(10)]
 
-        # 尝试不同 quality
-        while quality >= 60:
-            scaled.save(output_path, "JPEG", quality=quality, optimize=True)
-            size_kb = os.path.getsize(output_path) / 1024
-            if size_kb <= target_kb:
-                print(f"✅ {input_path} → {output_path} ({scaled.width}x{scaled.height}, {size_kb:.1f} KB, q={quality}, scale={scale:.2f})")
-                return output_path
-            quality -= 5
+    try:
+        for scale in scales:
+            if scale < 1.0:
+                new_size = (max(1, round(img.width * scale)), max(1, round(img.height * scale)))
+                scaled = img.resize(new_size, Image.LANCZOS)
+            else:
+                scaled = img
 
-        # 还超 → 缩小
-        scale *= 0.9
-        quality = 85
+            for quality in range(85, 24, -5):
+                scaled.save(temp_output, "JPEG", quality=quality, optimize=True, subsampling=2)
+                size_kb = os.path.getsize(temp_output) / 1024
+                if size_kb <= target_kb:
+                    os.replace(temp_output, output)
+                    print(
+                        f"✅ {input_path} → {output} "
+                        f"({scaled.width}x{scaled.height}, {size_kb:.1f} KB, q={quality}, scale={scale:.2f})"
+                    )
+                    return output
+    finally:
+        if os.path.exists(temp_output):
+            os.unlink(temp_output)
 
-    # 10 轮还超 → 接受最终值
-    size_kb = os.path.getsize(output_path) / 1024
-    print(f"⚠️ {input_path} → {output_path} ({size_kb:.1f} KB, 最终仍超目标)")
-    return output_path
+    exact = f"{target_width}x{target_height}" if target_width and target_height else "未指定"
+    raise ValueError(f"cannot satisfy target_kb={target_kb} at exact_size={exact}")
 
 
 def main():

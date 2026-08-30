@@ -2,9 +2,9 @@
   "schema_version": "onion_role_workspace_release_v1",
   "role": "strategy",
   "repository": "onion-strategy-agent",
-  "workspace_version": "0.1.15",
-  "source_revision": "93ed53d32e4e124984279a309c5a167f5d41f018",
-  "generated_at": "2026-08-29T08:17:07Z",
+  "workspace_version": "0.1.16",
+  "source_revision": "e786d34e8542f092d69e6e3216c43a614d28c881",
+  "generated_at": "2026-08-30T10:41:17Z",
   "skills": [
     "onion-app-image",
     "onion-app-image-copy",
@@ -29,7 +29,10 @@
     "macos": "scripts/bootstrap.sh",
     "python_minimum": "3.10",
     "node_required": false,
-    "ffmpeg_required": false
+    "ffmpeg_required": false,
+    "python_packages": [
+      "Pillow==12.3.0"
+    ]
   },
   "quick_connect": {
     "macos": "连接Agent.command",

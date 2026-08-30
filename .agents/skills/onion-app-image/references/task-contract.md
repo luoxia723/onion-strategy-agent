@@ -17,4 +17,6 @@
 }
 ```
 
+`placements`为兼容现有下游继续保留数组结构，但一个任务版本必须且只能包含1项。配置页和保存端都不得接受多版位。
+
 配置卡、Prompt生成和`validate-only`阶段允许`paid_generation_approved=false`。正式执行前本字段必须为真，同时调用命令必须显式带`--approved-in-current-task`；历史任务合同不能替代当前授权。本合同永远不允许投放发布。

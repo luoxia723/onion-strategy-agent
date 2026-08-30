@@ -1068,6 +1068,8 @@ def normalize_config_result(body: dict[str, Any], slot_map: dict[str, dict[str, 
         raise ValueError("placement_ids must be a list")
     if not placement_ids:
         raise ValueError("select at least one enabled placement")
+    if len(placement_ids) != 1:
+        raise ValueError("select exactly one enabled placement")
     placements = []
     for placement_id in placement_ids:
         slot = slot_map.get(str(placement_id))

@@ -8,19 +8,14 @@ SETS_DATA schema:
     "imageForm": "single | double | triple",
     "decision": "accepted | rejected | pending",
     "images": [{"index": 1, "path": "/tmp/.../set1_img1.png", "role": "base | branch"}],
-    "annotation": {
-      "fixed_rule_feedback": "string",
-      "subjective_feedback": "string",
-      "skip_feedback": false,
-      "problem_positions": [1]
-    }
+    "annotation": {"decision": "accepted | rejected"}
   }]
 }
 -->
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>洋葱投放图片标注 - {{REQUEST_ID}}</title>
+  <title>洋葱投放图片选择 - {{REQUEST_ID}}</title>
   <style>
     :root {
       --ink: #1a1a1a;
@@ -168,10 +163,21 @@ SETS_DATA schema:
       font-size: 13px;
     }
     .source-box .label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+    .review-findings {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: #fff8e8;
+      border: 1px solid #f2d690;
+      color: #72520a;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .review-findings strong { display: block; margin-bottom: 2px; }
     details summary { cursor: pointer; font-size: 12px; color: var(--primary); padding: 4px 0; }
     details[open] summary { color: var(--ink); }
 
-    /* === 上一套/下一套 === */
+    /* === 上一候选/下一候选 === */
     .nav-row {
       margin-top: 18px;
       display: flex;
@@ -179,7 +185,7 @@ SETS_DATA schema:
       gap: 8px;
     }
 
-    /* === 右：标注操作 === */
+    /* === 右：选择操作 === */
     .btn {
       padding: 10px 16px;
       border-radius: 6px;
@@ -288,9 +294,9 @@ SETS_DATA schema:
 </head>
 <body>
   <div class="topbar">
-    <h1>🍿 洋葱投放图片标注</h1>
+    <h1>🍿 洋葱投放图片选择</h1>
     <span class="meta">Request {{REQUEST_ID}}</span>
-    <span class="progress">已标注 <strong id="done-count">0</strong> / <strong id="total-count">0</strong> 套</span>
+    <span class="progress">已选择 <strong id="done-count">0</strong> / <strong id="total-count">0</strong> 个候选</span>
   </div>
 
   <div class="layout">
@@ -305,57 +311,33 @@ SETS_DATA schema:
       <!-- JS 填充 -->
     </article>
 
-    <!-- 右栏：标注操作 -->
+    <!-- 右栏：选择操作 -->
     <aside class="panel right-aside" id="annotation-panel">
-      <h3>图片方案标注</h3>
+      <h3>候选选择</h3>
       <p style="font-size: 12px; color: var(--muted); margin: 6px 0 14px;">
-        采纳整套，或不采纳并填写反馈。固定规则反馈和主观感受反馈可以同时填写；跳过反馈会直接进入下一套。
+        直接选择采纳或不采纳，不需要填写理由；选择后自动进入下一个候选。
       </p>
 
       <div class="actions" style="display: grid; gap: 8px;">
-        <button class="btn btn-primary btn-block" id="btn-accept">采纳整套 <span class="key">Y</span></button>
-        <button class="btn btn-danger btn-block" id="btn-reject">不采纳整套 <span class="key">N</span></button>
-      </div>
-
-      <div id="reject-panel" style="display: none;">
-        <div class="field">
-          <p style="font-size: 11px; color: var(--muted); margin-top: 6px;">
-            <strong>固定规则反馈</strong>：能写进 SKILL.md 的硬约束（如手机不能有刘海屏）<br>
-            <strong>主观感受反馈</strong>：审美、风格、吸引力等主观判断<br>
-            <strong>跳过反馈</strong>：不采纳但暂时不沉淀原因，点击后直接进入下一套
-          </p>
-        </div>
-
-        <div class="field" id="field-rule">
-          <label>固定规则反馈</label>
-          <textarea id="fixedRuleFeedback" placeholder="例：手机有刘海屏违反应用商店审核 / Logo 必须清晰"></textarea>
-        </div>
-
-        <div class="field" id="field-note">
-          <label>主观感受反馈</label>
-          <textarea id="subjectiveFeedback" placeholder="例：画面不够吸引人 / 风格不贴近产品"></textarea>
-        </div>
-
-        <button class="btn btn-danger btn-block" id="btn-confirm-reject" style="margin-top: 12px;">确认不采纳并下一套</button>
-        <button class="btn btn-block" id="btn-skip-feedback" style="margin-top: 8px;">跳过反馈并下一套</button>
+        <button class="btn btn-primary btn-block" id="btn-accept">采纳 <span class="key">Y</span></button>
+        <button class="btn btn-danger btn-block" id="btn-reject">不采纳 <span class="key">N</span></button>
       </div>
 
       <div class="hotkey-help">
         <span><kbd>Y</kbd> / <kbd>Enter</kbd> 采纳</span>
         <span><kbd>N</kbd> 不采纳</span>
-        <span><kbd>←</kbd> / <kbd>K</kbd> 上一套</span>
-        <span><kbd>→</kbd> / <kbd>J</kbd> 下一套</span>
-        <span><kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> 标记图 N 有问题</span>
+        <span><kbd>←</kbd> / <kbd>K</kbd> 上一候选</span>
+        <span><kbd>→</kbd> / <kbd>J</kbd> 下一候选</span>
         <span><kbd>Esc</kbd> 清空</span>
       </div>
     </aside>
   </div>
 
   <div class="submit-bar">
-    <span class="status" id="submit-status">把所有套都标注完后点提交</span>
+    <span class="status" id="submit-status">为所有候选选择采纳或不采纳后提交</span>
     <div class="actions">
       <button class="btn" onclick="resetAll()">全部清空</button>
-      <button id="submitAllButton" class="btn btn-primary" onclick="submitAll()">提交标注结果</button>
+      <button id="submitAllButton" class="btn btn-primary" onclick="submitAll()">提交选择结果</button>
     </div>
   </div>
 
@@ -381,10 +363,6 @@ SETS_DATA schema:
       return {
         id: setId,
         decision: null,        // 'accepted' | 'rejected' | null
-        fixedRuleFeedback: '',
-        subjectiveFeedback: '',
-        skipFeedback: false,
-        problemPositions: [],  // [1, 2, 3] 之子集
       };
     }
 
@@ -404,6 +382,15 @@ SETS_DATA schema:
 
     function totalCount() { return SETS.length; }
 
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
     syncStateWithSets();
 
     // === 渲染左栏 ===
@@ -414,7 +401,7 @@ SETS_DATA schema:
                        st === 'rejected' ? '<span class="badge rejected">不采纳</span>' :
                        '<span class="badge pending">待标</span>';
         return `<button class="scheme-item ${i === curIndex ? 'active' : ''}" onclick="selectIndex(${i})">
-                  <span>套 ${i + 1}: ${s.set_id}</span>${badge}
+                  <span>候选 ${i + 1}: ${s.set_id}</span>${badge}
                 </button>`;
       }).join('');
       document.getElementById('scheme-list-items').innerHTML = html;
@@ -439,14 +426,10 @@ SETS_DATA schema:
 
       const imagesHtml = s.thumb.map((p, idx) => {
         const i = idx + 1;
-        const checked = st.problemPositions.includes(i);
         return `
           <div class="image-cell">
             <img src="${p}" alt="图 ${i}" onclick="showLightbox('${p}')">
-            <label class="${checked ? 'checked' : ''}">
-              <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleProblem(${i})">
-              图 ${i}${checked ? ' · 标记有问题' : ''}
-            </label>
+            ${n > 1 ? `<label>图 ${i}</label>` : ''}
           </div>`;
       }).join('');
 
@@ -461,31 +444,35 @@ SETS_DATA schema:
             </details>` : ''}
         </section>` : '';
 
+      const reviewFindings = Array.isArray(s.meta.review_findings) ? s.meta.review_findings : [];
+      const findingsHtml = reviewFindings.length ? `
+        <section class="review-findings">
+          <strong>候选提示（仅供选择参考，不代表淘汰）</strong>
+          ${reviewFindings.map(item => `<div>• ${escapeHtml(item)}</div>`).join('')}
+        </section>` : '';
+
       const navHtml = `
         <div class="nav-row">
-          <button class="btn" ${curIndex === 0 ? 'disabled' : ''} onclick="selectIndex(${curIndex - 1})">◀ 上一套 <span class="key">←</span></button>
-          <button class="btn" ${curIndex >= totalCount() - 1 ? 'disabled' : ''} onclick="selectIndex(${curIndex + 1})">下一套 ▶ <span class="key">→</span></button>
+          <button class="btn" ${curIndex === 0 ? 'disabled' : ''} onclick="selectIndex(${curIndex - 1})">◀ 上一候选 <span class="key">←</span></button>
+          <button class="btn" ${curIndex >= totalCount() - 1 ? 'disabled' : ''} onclick="selectIndex(${curIndex + 1})">下一候选 ▶ <span class="key">→</span></button>
         </div>`;
 
       document.getElementById('main-panel').innerHTML = `
         <h3>
-          <span>套 ${curIndex + 1} / ${totalCount()}</span>
+          <span>候选 ${curIndex + 1} / ${totalCount()}</span>
           <span class="meta-badges">${metaBadges}</span>
         </h3>
         <div class="images ${colClass}">${imagesHtml}</div>
+        ${findingsHtml}
         ${sourceHtml}
         ${navHtml}`;
     }
 
-    // === 渲染右栏（采纳/拒绝面板状态）===
+    // === 渲染右栏 ===
     function renderRightPanel() {
-      const st = stateForIndex(curIndex);
-      const rejectPanel = document.getElementById('reject-panel');
-      // 同步 textarea
-      document.getElementById('fixedRuleFeedback').value = st.fixedRuleFeedback;
-      document.getElementById('subjectiveFeedback').value = st.subjectiveFeedback;
-      // 当 decision === 'rejected' 显示 reject panel
-      rejectPanel.style.display = (st.decision === 'rejected') ? 'block' : 'none';
+      const isSingle = (SETS[curIndex]?.thumb?.length || 0) === 1;
+      document.getElementById('btn-accept').childNodes[0].nodeValue = isSingle ? '采纳此图 ' : '采纳整套 ';
+      document.getElementById('btn-reject').childNodes[0].nodeValue = isSingle ? '不采纳此图 ' : '不采纳整套 ';
     }
 
     function renderProgress() {
@@ -493,7 +480,7 @@ SETS_DATA schema:
       const done = states.filter(s => s.decision !== null).length;
       document.getElementById('done-count').textContent = done;
       document.getElementById('total-count').textContent = totalCount();
-      const status = done === totalCount() ? '✅ 已全部标注完，可以提交' : `还有 ${totalCount() - done} 套未标注`;
+      const status = done === totalCount() ? '✅ 已全部选择完，可以提交' : `还有 ${totalCount() - done} 个候选未选择`;
       document.getElementById('submit-status').textContent = status;
     }
 
@@ -511,64 +498,22 @@ SETS_DATA schema:
       curIndex = i;
       renderAll();
     }
-    function toggleProblem(pos) {
+    function decide(decision) {
       const st = stateForIndex(curIndex);
-      const idx = st.problemPositions.indexOf(pos);
-      if (idx >= 0) st.problemPositions.splice(idx, 1);
-      else st.problemPositions.push(pos);
-      renderMain();
-    }
-    function accept() {
-      const st = stateForIndex(curIndex);
-      st.decision = 'accepted';
-      st.fixedRuleFeedback = '';
-      st.subjectiveFeedback = '';
-      st.skipFeedback = false;
-      // 自动跳下一套
+      st.decision = decision;
       const next = SETS.findIndex((_, i) => i > curIndex && stateForIndex(i).decision === null);
       if (next >= 0) selectIndex(next);
       else renderAll();
     }
-    function openReject() {
-      const st = stateForIndex(curIndex);
-      st.decision = 'rejected';
-      st.skipFeedback = false;
-      renderAll();
-    }
-    function confirmReject() {
-      const st = stateForIndex(curIndex);
-      st.skipFeedback = false;
-      if (!st.fixedRuleFeedback.trim() && !st.subjectiveFeedback.trim()) {
-        alert('不采纳时请填写固定规则反馈或主观感受反馈；如果暂时不沉淀原因，请点击「跳过反馈并下一套」。');
-        return;
-      }
-      // 跳下一套
-      const next = SETS.findIndex((_, i) => i > curIndex && stateForIndex(i).decision === null);
-      if (next >= 0) selectIndex(next);
-      else renderAll();
-    }
-
-    function skipFeedbackAndNext() {
-      const st = stateForIndex(curIndex);
-      st.decision = 'rejected';
-      st.fixedRuleFeedback = '';
-      st.subjectiveFeedback = '';
-      st.skipFeedback = true;
-      const next = SETS.findIndex((_, i) => i > curIndex && stateForIndex(i).decision === null);
-      if (next >= 0) selectIndex(next);
-      else renderAll();
-    }
+    function accept() { decide('accepted'); }
+    function reject() { decide('rejected'); }
     function resetCur() {
-      Object.assign(stateForIndex(curIndex), {
-        decision: null, fixedRuleFeedback: '', subjectiveFeedback: '', skipFeedback: false, problemPositions: []
-      });
+      Object.assign(stateForIndex(curIndex), { decision: null });
       renderAll();
     }
     function resetAll() {
-      if (!confirm('清空所有标注？')) return;
-      SETS.forEach((_, i) => Object.assign(stateForIndex(i), {
-        decision: null, fixedRuleFeedback: '', subjectiveFeedback: '', skipFeedback: false, problemPositions: []
-      }));
+      if (!confirm('清空所有选择？')) return;
+      SETS.forEach((_, i) => Object.assign(stateForIndex(i), { decision: null }));
       curIndex = 0;
       renderAll();
     }
@@ -582,58 +527,37 @@ SETS_DATA schema:
         scheme,
         state: stateForIndex(i),
       }));
-      for (const item of annotated) {
-        const st = item.state;
-        if (st.decision !== 'rejected') continue;
-        if (!st.skipFeedback && !st.fixedRuleFeedback.trim() && !st.subjectiveFeedback.trim()) {
-          alert(`套 ${item.scheme.set_id} 不采纳但没有反馈。请填写固定规则反馈 / 主观感受反馈，或点击跳过反馈。`);
-          selectIndex(SETS.findIndex(s => s.set_id === item.scheme.set_id));
-          return;
-        }
-      }
       const pending = annotated.filter(item => item.state.decision === null).length;
-      if (pending > 0 && !confirm(`还有 ${pending} 套未标注，仍要提交吗？未标注将跳过，不写入 Base。`)) return;
+      if (pending > 0 && !confirm(`还有 ${pending} 个候选未选择，仍要提交吗？未选择候选不会进入交付。`)) return;
       const accepted = annotated.filter(item => item.state.decision === 'accepted');
       const rejected = annotated.filter(item => item.state.decision === 'rejected');
       const pendingItems = annotated.filter(item => item.state.decision === null);
       const result = {
         request_id: '{{REQUEST_ID}}',
         timestamp: new Date().toISOString(),
-        upload_decision: {
-          upload_to_feishu: accepted.length > 0,
+        selection_summary: {
           accepted_count: accepted.length,
           rejected_count: rejected.length,
           pending_count: pendingItems.length,
-          rule: 'Only accepted_schemes may be written to Feishu image_groups. Rejected and pending schemes must not be uploaded.',
+          rule: '只有采纳候选进入04_交付；不采纳和未选择候选保留在03_候选。',
         },
         accepted_scheme_ids: accepted.map(item => item.scheme.set_id),
         accepted_schemes: accepted.map(item => ({
           ...item.scheme,
           annotation: {
             decision: item.state.decision,
-            problem_positions: item.state.problemPositions,
           },
         })),
         rejected_schemes: rejected.map(item => ({
           ...item.scheme,
           annotation: {
             decision: item.state.decision,
-            fixed_rule_feedback: item.state.fixedRuleFeedback,
-            subjective_feedback: item.state.subjectiveFeedback,
-            skip_feedback: item.state.skipFeedback,
-            problem_positions: item.state.problemPositions,
           },
         })),
         pending_scheme_ids: pendingItems.map(item => item.scheme.set_id),
         schemes: annotated.map(item => ({
           id: item.scheme.set_id,
           decision: item.state.decision || 'pending',
-          ...(item.state.decision === 'rejected' ? {
-            fixed_rule_feedback: item.state.fixedRuleFeedback,
-            subjective_feedback: item.state.subjectiveFeedback,
-            skip_feedback: item.state.skipFeedback,
-          } : {}),
-          problem_positions: item.state.problemPositions,
         })),
       };
       const json = JSON.stringify(result, null, 2);
@@ -650,21 +574,21 @@ SETS_DATA schema:
         });
         const payload = await response.json();
         if (payload.ok) {
-          document.getElementById('submit-status').textContent = `标注结果已保存：${payload.path}。请回到当前 AI 对话回复：好了。`;
-          alert('标注结果已保存，请回到当前 AI 对话回复：好了。');
+          document.getElementById('submit-status').textContent = `选择结果已保存：${payload.path}。请回到当前 AI 对话回复：好了。`;
+          alert('选择结果已保存，请回到当前 AI 对话回复：好了。');
           return;
         }
         document.getElementById('submit-status').textContent = `保存失败：${payload.error || 'unknown error'}。请确认本地服务仍在运行后重试。`;
         alert('保存失败，请确认本地服务仍在运行后重试。');
         submitInFlight = false;
         submitButton.disabled = false;
-        submitButton.textContent = '提交标注结果';
+        submitButton.textContent = '提交选择结果';
       } catch (err) {
         document.getElementById('submit-status').textContent = `保存失败：${err.message}。请确认本地服务仍在运行后重试。`;
         alert('保存失败，请确认本地服务仍在运行后重试。');
         submitInFlight = false;
         submitButton.disabled = false;
-        submitButton.textContent = '提交标注结果';
+        submitButton.textContent = '提交选择结果';
       }
     }
 
@@ -703,33 +627,16 @@ SETS_DATA schema:
 
     // === 快捷键 ===
     document.addEventListener('keydown', (e) => {
-      // textarea 内不响应字母快捷键（避免输入冲突）
-      if (e.target.tagName === 'TEXTAREA') return;
       const key = e.key;
       if (key === 'ArrowLeft' || key === 'k' || key === 'K') { selectIndex(curIndex - 1); e.preventDefault(); }
       else if (key === 'ArrowRight' || key === 'j' || key === 'J') { selectIndex(curIndex + 1); e.preventDefault(); }
       else if (key === 'y' || key === 'Y' || key === 'Enter') { accept(); e.preventDefault(); }
-      else if (key === 'n' || key === 'N') { openReject(); e.preventDefault(); }
+      else if (key === 'n' || key === 'N') { reject(); e.preventDefault(); }
       else if (key === 'Escape') { resetCur(); e.preventDefault(); }
-      else if (key >= '1' && key <= '3') {
-        const n = parseInt(key);
-        if (SETS[curIndex] && n <= SETS[curIndex].thumb.length) { toggleProblem(n); e.preventDefault(); }
-      }
     });
 
-    // textarea 同步
-    document.getElementById('fixedRuleFeedback').addEventListener('input', e => {
-      stateForIndex(curIndex).fixedRuleFeedback = e.target.value;
-      stateForIndex(curIndex).skipFeedback = false;
-    });
-    document.getElementById('subjectiveFeedback').addEventListener('input', e => {
-      stateForIndex(curIndex).subjectiveFeedback = e.target.value;
-      stateForIndex(curIndex).skipFeedback = false;
-    });
     document.getElementById('btn-accept').addEventListener('click', accept);
-    document.getElementById('btn-reject').addEventListener('click', openReject);
-    document.getElementById('btn-confirm-reject').addEventListener('click', confirmReject);
-    document.getElementById('btn-skip-feedback').addEventListener('click', skipFeedbackAndNext);
+    document.getElementById('btn-reject').addEventListener('click', reject);
 
     // 初始渲染
     renderAll();

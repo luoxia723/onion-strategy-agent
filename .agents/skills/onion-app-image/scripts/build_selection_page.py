@@ -83,6 +83,19 @@ def normalize_meta(source: dict[str, Any]) -> dict[str, Any]:
             meta[normalized] = source[normalized]
         elif raw in source:
             meta[normalized] = source[raw]
+    findings = (
+        source.get("review_findings")
+        or source.get("content_findings")
+        or source.get("advisories")
+        or meta.get("review_findings")
+        or []
+    )
+    if isinstance(findings, str):
+        findings = [findings]
+    if isinstance(findings, list):
+        normalized_findings = [str(item).strip() for item in findings if str(item).strip()]
+        if normalized_findings:
+            meta["review_findings"] = normalized_findings
     return meta
 
 
