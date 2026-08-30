@@ -37,7 +37,7 @@ description: 当用户要求根据一个已选 APP 购买动因与信息屋生�
 5. 有创意报告时先读可用报告的一览，再读取适配候选结构卡中固定的`口播文案`行、`不能怎样使用`和代表案例；`建议使用位置`只表示整条结构、开头、口播中段、产品演示或证据段、行动收口中的采用位置，不是多个下游任务。0份、无适配结构或只有风格截图时直接原创，不伪造报告编号。
 6. 每条文案采用一个主创意关系；外部、内部同构结构可合并记录，同一结构或案例可重复参考；原创必须明确标记且不得伪造来源。
 7. GPT/Codex只编排Kimi用户消息：放入归一化上下文、数量、逐条创意计划、必要产品事实、事实边界、渠道CTA、前贴状态和来源字段；不提供GPT正文，也不替Kimi写或改正式口播。
-8. 使用`references/kimi-system-prompt.md`的完整正文作为`system_prompt`，将第7步编排结果作为`user_prompt`，调用统一MCP的`generation_kimi_generate`。用户当前明确要求生成或修改文案时传`approved_in_current_task=true`，并按“任务＋APP分支＋输入指纹＋版本”生成幂等Key。网络重试复用原Key；用户明确重生或机器校验后的修复请求使用新版本Key。Kimi从零完成业务说服链、口播化、事实回查和完整Markdown输出；模型、参数和供应商Key由服务端封装。
+8. 使用`references/kimi-system-prompt.md`的完整正文作为`system_prompt`，将第7步编排结果作为`user_prompt`，调用统一MCP的`generation_kimi_generate`。用户当前明确要求生成或修改文案时传`approved_in_current_task=true`，并按“任务＋APP分支＋输入指纹＋版本”生成幂等Key；同时按[统一OAuth MCP适配](../../references/http-mcp-adapter.md)传当前任务、版本、批次和逻辑项的`generation_context`，整份文案批次是1个逻辑项，文案条数继续由本Skill输入与校验器守恒。网络重试复用原Key；明确终态失败只由服务器重试当前逻辑项；状态不明时回查`generation_get_operation`并停止新建。用户明确重生或机器校验后的修复请求使用新版本Key。Kimi从零完成业务说服链、口播化、事实回查和完整Markdown输出；模型、参数和供应商Key由服务端封装。
 9. 正文以35至60秒为软目标，推荐220至300个中文字符、理想240至280个字符；只保留一个核心问题和一条主功能链，主功能可包含2至4个连续动作，辅助能力只有继续解决同一问题时才加入。
 10. 运行`scripts/validate_copy.py`检查数量、格式和来源。失败时把机器错误作为修复信息交给Kimi重试一次；GPT/Codex不得静默改写Kimi正文。再次失败则停止并保留失败原因。
 11. 校验通过后停止在人工审核，不生成前贴或成片。
