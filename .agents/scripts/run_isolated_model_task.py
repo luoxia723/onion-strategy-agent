@@ -4,11 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +62,112 @@ def usage_from_events(text: str) -> dict[str, int]:
                     if isinstance(value, (int, float))
                 }
     return usage
+
+
+def model_compatible_schema(
+    schema: dict[str, Any],
+) -> tuple[dict[str, Any], list[dict[str, str]]]:
+    """Move unsupported uniqueness checks out of the server-side schema."""
+
+    local_constraints: list[dict[str, str]] = []
+
+    def visit(node: Any, path: str) -> Any:
+        if isinstance(node, list):
+            return [visit(item, path) for item in node]
+        if not isinstance(node, dict):
+            return copy.deepcopy(node)
+        result: dict[str, Any] = {}
+        for key, value in node.items():
+            if key == "uniqueItems":
+                if value is True:
+                    local_constraints.append(
+                        {"keyword": "uniqueItems", "path": path}
+                    )
+                continue
+            if key == "properties" and isinstance(value, dict):
+                result[key] = {
+                    name: visit(child, f"{path}.{name}")
+                    for name, child in value.items()
+                }
+            elif key in {"items", "additionalProperties"}:
+                result[key] = visit(value, f"{path}[*]")
+            elif key == "patternProperties" and isinstance(value, dict):
+                result[key] = {
+                    name: visit(child, f"{path}.{key}.{name}")
+                    for name, child in value.items()
+                }
+            else:
+                result[key] = copy.deepcopy(value)
+        return result
+
+    return visit(schema, "$"), local_constraints
+
+
+def validate_local_schema_constraints(
+    value: Any,
+    schema: dict[str, Any],
+) -> None:
+    """Validate constraints intentionally omitted from the model schema."""
+
+    def json_identity(item: Any) -> Any:
+        if item is None:
+            return ("null",)
+        if isinstance(item, bool):
+            return ("boolean", item)
+        if isinstance(item, (int, float)):
+            return ("number", Decimal(str(item)).normalize())
+        if isinstance(item, str):
+            return ("string", item)
+        if isinstance(item, list):
+            return ("array", tuple(json_identity(value) for value in item))
+        if isinstance(item, dict):
+            return (
+                "object",
+                tuple(
+                    (key, json_identity(value))
+                    for key, value in sorted(item.items())
+                ),
+            )
+        raise TypeError(f"不是JSON值：{type(item).__name__}")
+
+    def visit(current: Any, node: Any, path: str) -> None:
+        if not isinstance(node, dict):
+            return
+        if node.get("uniqueItems") is True and isinstance(current, list):
+            seen: set[Any] = set()
+            for item in current:
+                identity = json_identity(item)
+                if identity in seen:
+                    raise ValueError(f"本地Schema校验失败：{path}存在重复成员")
+                seen.add(identity)
+        properties = node.get("properties")
+        if isinstance(current, dict) and isinstance(properties, dict):
+            for name, child in properties.items():
+                if name in current:
+                    visit(current[name], child, f"{path}.{name}")
+            known_names = set(properties)
+        else:
+            known_names = set()
+        if isinstance(current, dict):
+            pattern_properties = node.get("patternProperties")
+            matched_names: set[str] = set()
+            if isinstance(pattern_properties, dict):
+                for pattern, child in pattern_properties.items():
+                    for name, item in current.items():
+                        if re.search(pattern, name):
+                            visit(item, child, f"{path}.{name}")
+                            matched_names.add(name)
+            additional = node.get("additionalProperties")
+            if isinstance(additional, dict):
+                for name, item in current.items():
+                    if name not in known_names and name not in matched_names:
+                        visit(item, additional, f"{path}.{name}")
+        items = node.get("items")
+        if isinstance(current, list) and isinstance(items, dict):
+            for index, item in enumerate(current):
+                visit(item, items, f"{path}[{index}]")
+
+    visit(value, schema, "$")
 
 
 def build_prompt(
@@ -119,6 +228,24 @@ def main() -> int:
     events_path = args.output.with_suffix(args.output.suffix + ".events.jsonl")
     stderr_path = args.output.with_suffix(args.output.suffix + ".stderr.txt")
     receipt_path = args.output.with_suffix(args.output.suffix + ".receipt.json")
+    original_schema = None
+    model_schema_path = args.output_schema
+    local_schema_constraints: list[dict[str, str]] = []
+    if args.output_schema:
+        original_schema = json.loads(args.output_schema.read_text(encoding="utf-8"))
+        if not isinstance(original_schema, dict):
+            raise ValueError("输出Schema根节点必须是object")
+        compatible_schema, local_schema_constraints = model_compatible_schema(
+            original_schema
+        )
+        if compatible_schema != original_schema:
+            model_schema_path = args.output.with_suffix(
+                args.output.suffix + ".model.schema.json"
+            )
+            write_private(
+                model_schema_path,
+                json.dumps(compatible_schema, ensure_ascii=False, indent=2) + "\n",
+            )
     command = [
         str(resolve_codex_binary()),
         "exec",
@@ -136,8 +263,8 @@ def main() -> int:
         "--output-last-message",
         str(args.output.resolve()),
     ]
-    if args.output_schema:
-        command.extend(["--output-schema", str(args.output_schema.resolve())])
+    if model_schema_path:
+        command.extend(["--output-schema", str(model_schema_path.resolve())])
     command.append("-")
     completed = subprocess.run(
         command,
@@ -157,7 +284,6 @@ def main() -> int:
         )
     if not args.output.exists() or not args.output.read_text(encoding="utf-8").strip():
         raise RuntimeError("隔离模型任务没有生成结果")
-    args.output.chmod(0o600)
     receipt = {
         "schema_version": "isolated_model_task_receipt_v1",
         "model": args.model,
@@ -169,9 +295,48 @@ def main() -> int:
         "prompt_sha256": sha256_bytes(prompt_bytes),
         "output_file": str(args.output.resolve()),
         "output_sha256": sha256_bytes(args.output.read_bytes()),
+        "original_output_schema_sha256": (
+            sha256_bytes(args.output_schema.read_bytes())
+            if args.output_schema
+            else None
+        ),
+        "model_output_schema_sha256": (
+            sha256_bytes(model_schema_path.read_bytes())
+            if model_schema_path
+            else None
+        ),
+        "local_schema_constraints": local_schema_constraints,
         "usage": usage_from_events(completed.stdout),
-        "status": "complete",
     }
+    if original_schema is not None:
+        try:
+            structured_output = json.loads(args.output.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as error:
+            receipt.update(
+                {"status": "failed", "error_code": "structured_output_not_json"}
+            )
+            write_private(
+                receipt_path,
+                json.dumps(receipt, ensure_ascii=False, indent=2) + "\n",
+            )
+            raise RuntimeError("结构化输出不是有效JSON") from error
+        try:
+            validate_local_schema_constraints(structured_output, original_schema)
+        except ValueError as error:
+            receipt.update(
+                {
+                    "status": "failed",
+                    "error_code": "local_schema_validation_failed",
+                    "error_message": str(error),
+                }
+            )
+            write_private(
+                receipt_path,
+                json.dumps(receipt, ensure_ascii=False, indent=2) + "\n",
+            )
+            raise
+    args.output.chmod(0o600)
+    receipt["status"] = "complete"
     write_private(receipt_path, json.dumps(receipt, ensure_ascii=False, indent=2) + "\n")
     print(
         json.dumps(
