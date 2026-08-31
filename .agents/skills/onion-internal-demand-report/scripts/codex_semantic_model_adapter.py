@@ -15,6 +15,11 @@ if str(COMMON_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(COMMON_SCRIPTS))
 
 from codex_runtime import resolve_codex_binary  # noqa: E402
+from model_schema_compat import (  # noqa: E402
+    model_compatible_schema,
+    preflight_model_schema,
+    validate_local_schema_constraints,
+)
 
 
 SUBJECT = {"type": "string", "enum": ["student", "parent", "other"]}
@@ -141,8 +146,11 @@ def main() -> int:
         temporary_path = Path(temporary)
         schema_path = temporary_path / "response.schema.json"
         output_path = temporary_path / "response.json"
+        original_schema = response_schema(stage)
+        compatible_schema, _ = model_compatible_schema(original_schema)
+        preflight_model_schema(compatible_schema)
         schema_path.write_text(
-            json.dumps(response_schema(stage), ensure_ascii=False),
+            json.dumps(compatible_schema, ensure_ascii=False),
             encoding="utf-8",
         )
         command = [
@@ -179,6 +187,7 @@ def main() -> int:
             response = json.loads(output_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
             raise SystemExit(f"Codex没有生成有效JSON: {error}") from error
+        validate_local_schema_constraints(response, original_schema)
         json.dump(response, sys.stdout, ensure_ascii=False, separators=(",", ":"))
         sys.stdout.write("\n")
     return 0

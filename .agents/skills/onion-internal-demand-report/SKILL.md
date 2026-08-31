@@ -48,7 +48,7 @@ description: 生成或修改一份单文件洋葱内部需求报告，自动使�
 14. 报告只收录至少关联2条高表现完整素材的需求。低于门槛的需求仍参与全量分析和语义归并，但不进入报告一览或详情。
 15. 每个进入报告的需求只选高表现完整素材作为代表：共有2至5条时全部展示，超过5条时选5条。优先覆盖不同的已识别功能/服务承接，再选需求表达清楚且不近义重复的素材。报告只列标题和公司云工作台绝对链接，不写“代表原因”。
 16. 使用`scripts/build_report_from_mapping.py`从`normalized_units.jsonl`、`final_mapping.json`、语义回执、MCP完整池manifest和正式产品事实生成单文件报告。不得让模型或外层程序绕开最终映射重新分组。
-17. 运行`scripts/validate_report.py <报告>`。正式校验器会回读语义回执并核对映射摘要；只有通过后才能交给购买动因或功能方向卡。明确标注的试验稿只能使用`--allow-trial-without-semantic-mapping`做格式检查，且不能进入下游。
+17. 把唯一候选写入`03_候选`，运行统一`python scripts/artifact_workspace.py report-delivery --task-root <任务目录>`。它会调用正式校验器回读语义回执、核对映射摘要、链接和产物合同，成功后只进入`pending_review`；只有用户明确人工采用后才运行`report-accept --approved-in-current-task`并交给购买动因或功能方向卡。明确标注的试验稿只能使用`--allow-trial-without-semantic-mapping`做格式检查，且不能进入下游。
 
 ## 完整性与边界
 

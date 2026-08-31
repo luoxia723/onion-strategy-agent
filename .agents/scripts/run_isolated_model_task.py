@@ -4,14 +4,11 @@
 from __future__ import annotations
 
 import argparse
-import copy
 import hashlib
 import json
 import os
-import re
 import subprocess
 import sys
-from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +17,11 @@ if str(COMMON_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(COMMON_SCRIPTS))
 
 from codex_runtime import resolve_codex_binary
+from model_schema_compat import (
+    model_compatible_schema,
+    preflight_model_schema,
+    validate_local_schema_constraints,
+)
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -62,112 +64,6 @@ def usage_from_events(text: str) -> dict[str, int]:
                     if isinstance(value, (int, float))
                 }
     return usage
-
-
-def model_compatible_schema(
-    schema: dict[str, Any],
-) -> tuple[dict[str, Any], list[dict[str, str]]]:
-    """Move unsupported uniqueness checks out of the server-side schema."""
-
-    local_constraints: list[dict[str, str]] = []
-
-    def visit(node: Any, path: str) -> Any:
-        if isinstance(node, list):
-            return [visit(item, path) for item in node]
-        if not isinstance(node, dict):
-            return copy.deepcopy(node)
-        result: dict[str, Any] = {}
-        for key, value in node.items():
-            if key == "uniqueItems":
-                if value is True:
-                    local_constraints.append(
-                        {"keyword": "uniqueItems", "path": path}
-                    )
-                continue
-            if key == "properties" and isinstance(value, dict):
-                result[key] = {
-                    name: visit(child, f"{path}.{name}")
-                    for name, child in value.items()
-                }
-            elif key in {"items", "additionalProperties"}:
-                result[key] = visit(value, f"{path}[*]")
-            elif key == "patternProperties" and isinstance(value, dict):
-                result[key] = {
-                    name: visit(child, f"{path}.{key}.{name}")
-                    for name, child in value.items()
-                }
-            else:
-                result[key] = copy.deepcopy(value)
-        return result
-
-    return visit(schema, "$"), local_constraints
-
-
-def validate_local_schema_constraints(
-    value: Any,
-    schema: dict[str, Any],
-) -> None:
-    """Validate constraints intentionally omitted from the model schema."""
-
-    def json_identity(item: Any) -> Any:
-        if item is None:
-            return ("null",)
-        if isinstance(item, bool):
-            return ("boolean", item)
-        if isinstance(item, (int, float)):
-            return ("number", Decimal(str(item)).normalize())
-        if isinstance(item, str):
-            return ("string", item)
-        if isinstance(item, list):
-            return ("array", tuple(json_identity(value) for value in item))
-        if isinstance(item, dict):
-            return (
-                "object",
-                tuple(
-                    (key, json_identity(value))
-                    for key, value in sorted(item.items())
-                ),
-            )
-        raise TypeError(f"不是JSON值：{type(item).__name__}")
-
-    def visit(current: Any, node: Any, path: str) -> None:
-        if not isinstance(node, dict):
-            return
-        if node.get("uniqueItems") is True and isinstance(current, list):
-            seen: set[Any] = set()
-            for item in current:
-                identity = json_identity(item)
-                if identity in seen:
-                    raise ValueError(f"本地Schema校验失败：{path}存在重复成员")
-                seen.add(identity)
-        properties = node.get("properties")
-        if isinstance(current, dict) and isinstance(properties, dict):
-            for name, child in properties.items():
-                if name in current:
-                    visit(current[name], child, f"{path}.{name}")
-            known_names = set(properties)
-        else:
-            known_names = set()
-        if isinstance(current, dict):
-            pattern_properties = node.get("patternProperties")
-            matched_names: set[str] = set()
-            if isinstance(pattern_properties, dict):
-                for pattern, child in pattern_properties.items():
-                    for name, item in current.items():
-                        if re.search(pattern, name):
-                            visit(item, child, f"{path}.{name}")
-                            matched_names.add(name)
-            additional = node.get("additionalProperties")
-            if isinstance(additional, dict):
-                for name, item in current.items():
-                    if name not in known_names and name not in matched_names:
-                        visit(item, additional, f"{path}.{name}")
-        items = node.get("items")
-        if isinstance(current, list) and isinstance(items, dict):
-            for index, item in enumerate(current):
-                visit(item, items, f"{path}[{index}]")
-
-    visit(value, schema, "$")
 
 
 def build_prompt(
@@ -238,6 +134,7 @@ def main() -> int:
         compatible_schema, local_schema_constraints = model_compatible_schema(
             original_schema
         )
+        preflight_model_schema(compatible_schema)
         if compatible_schema != original_schema:
             model_schema_path = args.output.with_suffix(
                 args.output.suffix + ".model.schema.json"

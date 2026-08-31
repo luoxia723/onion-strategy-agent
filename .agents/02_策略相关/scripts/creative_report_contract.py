@@ -134,6 +134,9 @@ def validate_common(text: str, *, prefix: str, overview_header: str) -> list[str
         if re.search(r"external-creative-\d|internal-creative-\d|\*\*结构引用\*\*", body):
             errors.append(f"{structure_id}:technical_identity_exposed")
 
-    if "不同结构的案例数非排他，不能跨结构相加" not in text:
+    if not re.search(
+        r"(?m)^.*不同结构.*(?:非排他|交叉|重复).*(?:不能|不可).*(?:相加|求和).*$",
+        text,
+    ):
         errors.append("missing_nonexclusive_case_notice")
     return errors
